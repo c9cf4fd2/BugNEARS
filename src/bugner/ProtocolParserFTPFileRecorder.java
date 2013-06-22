@@ -88,7 +88,7 @@ public class ProtocolParserFTPFileRecorder extends ProtocolParser {
         } else {
             if (processingPkt.ack) {
                 buffer.setAckedSeq(processingPkt.ack_num);
-                if (buffer.getOOOBufLen() > 100000) {
+                if (buffer.getOOOBufLen() > 100) {
                     recordFile();
                 }
             }
@@ -180,6 +180,7 @@ public class ProtocolParserFTPFileRecorder extends ProtocolParser {
         }
         infoStr += "\"";
         valL.add(infoStr);
+        /*
         try {
             SQLConnector sc = SQLConnector.getInstance();
             sc.incert("ftp", colL, valL);
@@ -188,5 +189,6 @@ public class ProtocolParserFTPFileRecorder extends ProtocolParser {
         } catch (SQLException ex) {
             Logger.getLogger(ProtocolParserFTPCommandParser.class.getName()).log(Level.SEVERE, null, ex);
         }
+        */
     }
 }
