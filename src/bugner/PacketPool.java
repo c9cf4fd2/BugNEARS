@@ -40,9 +40,7 @@ public class PacketPool {
     public synchronized void addPacket(Packet p) {
         testct++;
         packets.add(p);
-        if (packets.size() > 50000) {
-            cleanUnuse();
-        }
+        cleanUnuse();
     }
 
     public synchronized Packet getPacket(Integer key) {
