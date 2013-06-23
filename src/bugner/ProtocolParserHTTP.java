@@ -43,7 +43,7 @@ public class ProtocolParserHTTP extends ProtocolParser {
     @Override
     protected void processPacket() {
         try {
-            String dataStr = new String(processingPkt.data,"UTF-8");
+            String dataStr = new String(processingPkt.data,"US-ASCII");
             String firstLine = "";
             int r = dataStr.indexOf("\r\n");
             if (r > 0) {
@@ -52,9 +52,9 @@ public class ProtocolParserHTTP extends ProtocolParser {
             if (!handled.containsKey(processingKey)) {
                 if (firstLine.contains("HTTP/")) {
                     handled.put(processingKey, "");
+                    System.out.println("-HTTP " + processingKey);
                     ProtocolParserHTTPRecorder rec = new ProtocolParserHTTPRecorder(pktPool, pktPool.getNewKey(TIDKey), processingPkt.src_ip, processingPkt.src_port, processingPkt.dst_ip, processingPkt.dst_port, "./temp/http/", this, processingPkt);
                     Thread t = new Thread(rec);
-                    GUI.addText("---HTTP " + processingKey);
                     t.start();
                 }
             }

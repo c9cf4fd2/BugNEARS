@@ -19,7 +19,7 @@ import jpcap.packet.TCPPacket;
  *
  * @author c9cf4fd2NTUT
  */
-public class TCPStreamRecordBuffer {
+public class TCPStreamReorderBuffer {
 
     private Map<Long, TCPPacket> oooBuffer;
     private int oooBufferLen;
@@ -29,7 +29,7 @@ public class TCPStreamRecordBuffer {
     private long rxAckSeq;
     private List<Long> lostSegs;
 
-    public TCPStreamRecordBuffer() {
+    public TCPStreamReorderBuffer() {
         oooBuffer = new HashMap<Long, TCPPacket>();
         oooBufferLen = 0;
         ioBuffer = new LinkedList<TCPPacket>();
@@ -69,7 +69,7 @@ public class TCPStreamRecordBuffer {
         return oooBufferLen;
     }
 
-    public byte[] getIOData() {
+    public TCPPacket[] getIOPackets() {
         if (oooBufferLen == 0) {
             return null;
         } else if (oooBufferLen < 0) {
@@ -111,22 +111,10 @@ public class TCPStreamRecordBuffer {
                 }
             }
         }
-        ListIterator<TCPPacket> ioBIt = ioBuffer.listIterator();
-        int retLen = 0;
-        while (ioBIt.hasNext()) {
-            tp = ioBIt.next();
-            retLen += tp.data.length;
+        TCPPacket[] retA = new TCPPacket[ioBuffer.size()];
+        for (int i = 0; i < retA.length; i++) {
+            retA[i] = ioBuffer.remove(0);
         }
-        byte[] retA = new byte[retLen];
-        ioBIt = ioBuffer.listIterator();
-        int j = 0;
-        while (ioBIt.hasNext()) {
-            tp = ioBIt.next();
-            for (int i = 0; i < tp.data.length; i++) {
-                retA[j++] = tp.data[i];
-            }
-        }
-        ioBuffer.clear();
         return retA;
     }
 
@@ -139,5 +127,8 @@ public class TCPStreamRecordBuffer {
     }
 
     public void clear() {
+        oooBuffer.clear();
+        ioBuffer.clear();
+        lostSegs.clear();
     }
 }

@@ -16,8 +16,8 @@ public class HTTPStream {
 
     private boolean host; // true if this stream represent host rx data
     private String streamName;
-    private TCPStreamRecordBuffer oooBuffer;
-    private List<Byte> ioStream;
+    private TCPStreamReorderBuffer oooBuffer;
+    private List<TCPPacket> ioStream;
     private boolean isHeader;
     private int contentLen;
     private int msgCount;
@@ -29,11 +29,11 @@ public class HTTPStream {
         } else {
             streamName = "RES";
         }
-        oooBuffer = new TCPStreamRecordBuffer();
+        oooBuffer = new TCPStreamReorderBuffer();
         isHeader = true;
         contentLen = -1;
         msgCount = 0;
-        ioStream = new LinkedList<Byte>();
+        ioStream = new LinkedList<TCPPacket>();
     }
 
     public void put(TCPPacket tp) {
@@ -58,7 +58,7 @@ public class HTTPStream {
                 }
             }
         }
-        if (oooBuffer.getOOOBufLen() > 8192) {
+        if (oooBuffer.getOOOBufLen() > 4096) {
             update();
         }
     }
@@ -67,7 +67,7 @@ public class HTTPStream {
         return ioStream.size();
     }
 
-    public List<Byte> getIOStream() {
+    public List<TCPPacket> getIOStream() {
         return ioStream;
     }
 
@@ -106,9 +106,9 @@ public class HTTPStream {
     }
 
     private void update() {
-        byte[] BA = oooBuffer.getIOData();
-        for (int i = 0; i < BA.length; i++) {
-            ioStream.add(BA[i]);
+        TCPPacket[] PA = oooBuffer.getIOPackets();
+        for (int i = 0; i < PA.length; i++) {
+            ioStream.add(PA[i]);
         }
     }
 }

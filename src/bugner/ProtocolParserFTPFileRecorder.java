@@ -41,7 +41,7 @@ public class ProtocolParserFTPFileRecorder extends ProtocolParser {
     boolean lastACK;
     long lastActive;
     int testCT = 0;
-    TCPStreamRecordBuffer buffer;
+    TCPStreamReorderBuffer buffer;
     InetAddress cliIP, hostIP;
     boolean upload;
 
@@ -57,7 +57,7 @@ public class ProtocolParserFTPFileRecorder extends ProtocolParser {
         reorderBuffer = new ArrayList<TCPPacket>();
         lastACK = false;
         lastActive = System.currentTimeMillis();
-        buffer = new TCPStreamRecordBuffer();
+        buffer = new TCPStreamReorderBuffer();
         this.cliIP = cliIP;
         this.hostIP = hostIP;
         this.upload = upload;
@@ -88,7 +88,7 @@ public class ProtocolParserFTPFileRecorder extends ProtocolParser {
         } else {
             if (processingPkt.ack) {
                 buffer.setAckedSeq(processingPkt.ack_num);
-                if (buffer.getOOOBufLen() > 100) {
+                if (buffer.getOOOBufLen() > 4096) {
                     recordFile();
                 }
             }
@@ -145,8 +145,10 @@ public class ProtocolParserFTPFileRecorder extends ProtocolParser {
         }
         try {
             FileOutputStream FOS = new FileOutputStream(recordFile, true);
-            byte[] dataBA = buffer.getIOData();
-            FOS.write(dataBA);
+            TCPPacket[] packetBA = buffer.getIOPackets();
+            for (int i = 0; i < packetBA.length; i++) {
+                FOS.write(packetBA[i].data);
+            }
             FOS.close();
         } catch (FileNotFoundException ex) {
             Logger.getLogger(ProtocolParserFTPFileRecorder.class.getName()).log(Level.SEVERE, null, ex);
@@ -181,14 +183,14 @@ public class ProtocolParserFTPFileRecorder extends ProtocolParser {
         infoStr += "\"";
         valL.add(infoStr);
         /*
-        try {
-            SQLConnector sc = SQLConnector.getInstance();
-            sc.incert("ftp", colL, valL);
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(ProtocolParserFTPCommandParser.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (SQLException ex) {
-            Logger.getLogger(ProtocolParserFTPCommandParser.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        */
+         try {
+         SQLConnector sc = SQLConnector.getInstance();
+         sc.incert("ftp", colL, valL);
+         } catch (ClassNotFoundException ex) {
+         Logger.getLogger(ProtocolParserFTPCommandParser.class.getName()).log(Level.SEVERE, null, ex);
+         } catch (SQLException ex) {
+         Logger.getLogger(ProtocolParserFTPCommandParser.class.getName()).log(Level.SEVERE, null, ex);
+         }
+         */
     }
 }

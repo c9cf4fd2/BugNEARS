@@ -134,7 +134,7 @@ public class BugNERLuncher extends javax.swing.JFrame {
                 .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(btnStartRAS)
-                .addGap(21, 21, 21))
+                .addContainerGap())
         );
 
         pack();

@@ -34,14 +34,21 @@ public class ProtocolParserHTTPRecorder extends ProtocolParser {
     //
     HTTPStream reqStream;
     HTTPStream resStream;
-    //StreamRecorder
+    //
     InetAddress pasvFinIP;
     boolean lastACK;
     long lastActive;
     String streamKey;
     //test
+    HTTPEvent event;
     boolean first;
     long sTime;
+    int reqHeaderStartIdx;
+    boolean reqHeaderRxing;
+    int resHeaderStartIdx;
+    boolean resHeaderRxing;
+    int reqIdx;
+    int resIdx;
 
     public ProtocolParserHTTPRecorder(PacketPool pktPool, Integer TIDKey, InetAddress cliIP, int cliPort, InetAddress hostIP, int hostPort, String recFilePath, ProtocolParserHTTP PPHTTP, TCPPacket firstPkt) {
         super(pktPool, TIDKey);
@@ -54,9 +61,20 @@ public class ProtocolParserHTTPRecorder extends ProtocolParser {
         streamKey = cliIP.getHostAddress() + cliPort + hostIP.getHostAddress() + "80";
         reqStream = new HTTPStream(true);
         resStream = new HTTPStream(false);
-        lastActive = System.currentTimeMillis();
-        sTime = lastActive;
+        sTime = System.currentTimeMillis();
+        lastActive = sTime;
+        event = new HTTPEvent();
+        event.cliIP = cliIP.getHostAddress();
+        event.hostIP = hostIP.getHostAddress();
+        event.time = sTime;
+        event.filePathPrefix = sTime + "-" + streamKey + "-";
         //
+        reqHeaderStartIdx = 0;
+        reqHeaderRxing = false;
+        resHeaderStartIdx = 0;
+        resHeaderRxing = false;
+        reqIdx = 0;
+        resIdx = 0;
     }
 
     @Override
@@ -78,7 +96,7 @@ public class ProtocolParserHTTPRecorder extends ProtocolParser {
     protected void processPacket() {
         reqStream.put(processingPkt);
         resStream.put(processingPkt);
-        if (reqStream.getIOStreamLen()> 0) {
+        if (reqStream.getIOStreamLen() > 0) {
             record(reqStream);
         }
         if (resStream.getIOStreamLen() > 0) {
@@ -97,11 +115,13 @@ public class ProtocolParserHTTPRecorder extends ProtocolParser {
                 }
             } else if (processingPkt.ack && lastACK && (processingPkt.dst_ip.equals(pasvFinIP))) {
                 PPHTTP.removeHandled(streamKey);
+                System.out.println("--HTTP FIN " + streamKey);
                 return false;
             }
         } else {
             long time = System.currentTimeMillis();
             if (time - lastActive > 20000L) { // 20sec
+                System.out.println("--HTTP Time out " + streamKey);
                 PPHTTP.removeHandled(streamKey);
                 return false;
             }
@@ -140,13 +160,13 @@ public class ProtocolParserHTTPRecorder extends ProtocolParser {
     }
 
     private void record(HTTPStream ioStream) {
-        List<Byte> ioStreamBL = ioStream.getIOStream();
-        String fileName = "[" + sTime + "]" + streamKey + ioStream.getStreamName() + ".httplog";
-        writeFile(fileName, ioStreamBL);
-        ioStreamBL.clear();
+        List<TCPPacket> ioStreamPL = ioStream.getIOStream();
+        String fileName = event.filePathPrefix + ioStream.getStreamName() + ".httplog";
+        writeFile(fileName, ioStreamPL);
+        ioStreamPL.clear();
     }
 
-    private void writeFile(String fileName, List<Byte> ioStreamBL) {
+    private void writeFile(String fileName, List<TCPPacket> ioStreamPL) {
         File f = new File(recFilePath);
         if (!f.exists() || !f.isDirectory()) {
             f.mkdirs();
@@ -160,12 +180,10 @@ public class ProtocolParserHTTPRecorder extends ProtocolParser {
             }
         }
         try {
-            byte[] WTFBA = new byte[ioStreamBL.size()];
-            for (int i = 0; i < WTFBA.length; i++) {
-                WTFBA[i]=ioStreamBL.get(i);
-            }
             FileOutputStream FOS = new FileOutputStream(f, true);
-            FOS.write(WTFBA);
+            for (int i = 0; i < ioStreamPL.size(); i++) {
+                FOS.write(ioStreamPL.get(i).data);
+            }
             FOS.close();
         } catch (FileNotFoundException ex) {
             Logger.getLogger(ProtocolParserHTTPRecorder.class.getName()).log(Level.SEVERE, null, ex);

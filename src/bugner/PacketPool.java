@@ -23,9 +23,9 @@ public class PacketPool {
     private final Map<Integer, Integer> its;
     private final Map<Integer, Integer> steps;
     private int step;
+    private int bufferByteAdded;
     private int shiftAmount;
-    int testct = 0;
-    Random rnd;
+    private Random rnd;
     private final TreeSet<Integer> TS;
 
     public PacketPool() {
@@ -33,14 +33,17 @@ public class PacketPool {
         packets = new ArrayList<Packet>();
         steps = new HashMap<Integer, Integer>();
         step = 0;
+        bufferByteAdded = 0;
         rnd = new Random();
         TS = new TreeSet<Integer>();
     }
 
     public synchronized void addPacket(Packet p) {
-        testct++;
         packets.add(p);
-        cleanUnuse();
+        bufferByteAdded += p.len;
+        if (bufferByteAdded > 4096) {
+            cleanUnuse();
+        }
     }
 
     public synchronized Packet getPacket(Integer key) {
@@ -87,6 +90,7 @@ public class PacketPool {
             TS.clear();
             packets.subList(0, shiftAmount).clear();
             step++;
+            bufferByteAdded =0;
         }
     }
 
