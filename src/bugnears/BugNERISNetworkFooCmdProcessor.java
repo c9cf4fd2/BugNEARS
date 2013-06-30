@@ -43,10 +43,7 @@ public class BugNERISNetworkFooCmdProcessor implements Runnable {
     @Override
     public void run() {
         System.out.println("connection accepted");
-        for (;;) {
-            if (!skt.isConnected()) {
-                break;
-            }
+        do {
             try {
                 Object o = sktReader.readObject();
                 if (o != null) {
@@ -62,7 +59,14 @@ public class BugNERISNetworkFooCmdProcessor implements Runnable {
                             InputStream in = new FileInputStream(f);
                             IOUtils.copy(in, out);
                             fileSkt.close();
+                            in.close();
+                            out.close();
+                            skt.close();
+                            skt = null;
+                            break;
                         } else if (cmd.cmd.compareTo("bye") == 0) {
+                            skt.close();
+                            skt = null;
                             break;
                         }
                     } else {
@@ -70,14 +74,12 @@ public class BugNERISNetworkFooCmdProcessor implements Runnable {
                     }
                 }
             } catch (IOException ex) {
-                if (ex instanceof SocketException) {
-                }
                 Logger.getLogger(BugNERISNetworkFooCmdProcessor.class.getName()).log(Level.SEVERE, null, ex);
             } catch (InterruptedException ex) {
                 Logger.getLogger(BugNERISNetworkFooCmdProcessor.class.getName()).log(Level.SEVERE, null, ex);
             } catch (ClassNotFoundException ex) {
                 Logger.getLogger(BugNERISNetworkFooCmdProcessor.class.getName()).log(Level.SEVERE, null, ex);
             }
-        }
+        } while (skt != null);
     }
 }
